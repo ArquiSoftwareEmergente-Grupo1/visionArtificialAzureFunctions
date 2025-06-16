@@ -8,23 +8,21 @@ from sklearn.utils import resample
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras import layers, models
 
-# ========== CONFIGURACIÓN ==========
+# ========== CONFIG ==========
 DATASET_PATH = r"C:\Users\user\.cache\kagglehub\datasets\ashishmotwani\tomato\versions\1\train"
 IMG_SIZE = (128, 128)
 BALANCE_METHOD = "oversample"  # o "undersample"
 
-# Clases seleccionadas (puedes cambiarlas)
-CLASES_ELEGIDAS = ["healthy", "bacterial_spot", "late_blight"]
-label_map = {label: idx for idx, label in enumerate(CLASES_ELEGIDAS)}
+# ========== ETIQUETADO ==========
+label_map = {label: idx for idx, label in enumerate(sorted(os.listdir(DATASET_PATH)))}
 
-# ========== CARGA DE DATOS ==========
 X = []
 y = []
 
 for label in os.listdir(DATASET_PATH):
-    if label not in CLASES_ELEGIDAS:
-        continue
     class_path = os.path.join(DATASET_PATH, label)
+    if not os.path.isdir(class_path):
+        continue
     for img_file in os.listdir(class_path):
         img_path = os.path.join(class_path, img_file)
         img = cv2.imread(img_path)
@@ -66,7 +64,7 @@ def balance_dataset(X, y, method="oversample"):
 X, y = balance_dataset(X, y, method=BALANCE_METHOD)
 print(f"Dataset balanceado: {X.shape}, Labels: {np.unique(y, return_counts=True)}")
 
-# ========== DIVISIÓN ==========
+# ========== SEPARAR DATOS ==========
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 y_train_cat = to_categorical(y_train)
 y_test_cat = to_categorical(y_test)
@@ -82,7 +80,7 @@ model = models.Sequential([
     layers.MaxPooling2D(2,2),
     layers.Flatten(),
     layers.Dense(128, activation='relu'),
-    layers.Dense(len(CLASES_ELEGIDAS), activation='softmax')
+    layers.Dense(len(label_map), activation='softmax')
 ])
 
 model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
@@ -91,9 +89,9 @@ model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accur
 model.fit(X_train, y_train_cat, epochs=10, validation_data=(X_test, y_test_cat))
 
 # ========== GUARDADO ==========
-model.save("modelo_tomate_clases.h5")
+model.save("modelo_tomate.h5")
 
 with open("label_map.json", "w") as f:
     json.dump(label_map, f)
 
-print("✅ Modelo (3 clases) y etiquetas guardados correctamente.")
+print("✅ Modelo y etiquetas guardados correctamente.")
