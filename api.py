@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from tensorflow.keras.models import load_model
 import numpy as np
 import json
@@ -19,6 +20,7 @@ inv_label_map = {v: k for k, v in label_map.items()}
 
 # ========== API ==========
 app = Flask(__name__)
+CORS(app)  # <-- Habilita CORS globalmente
 
 @app.route("/")
 def home():
@@ -32,7 +34,6 @@ def predict():
     file = request.files["image"]
     img_bytes = file.read()
 
-    # Leer imagen desde bytes con OpenCV
     nparr = np.frombuffer(img_bytes, np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
     if img is None:
